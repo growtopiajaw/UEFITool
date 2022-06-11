@@ -8,48 +8,6 @@ on:
     types: [published]
 
 jobs:
-  build_mac:
-    name: Build on macOS
-    runs-on: macos-10.15
-    steps:
-      - uses: actions/checkout@v2
-      - run: ./unixbuild.sh
-      - name: Upload to artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: macOS builds
-          path: dist/*.zip
-      - name: Upload to releases
-        if: github.event_name == 'release'
-        uses: svenstaro/upload-release-action@e74ff71f7d8a4c4745b560a485cc5fdb9b5b999d
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/*.zip
-          tag: ${{ github.ref }}
-          file_glob: true
-
-  build_linux:
-    name: Build on Linux
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Get Qt
-        run: sudo apt-get install -qq qt5-default qt5-qmake qtbase5-dev-tools cmake
-      - run: ./unixbuild.sh
-      - name: Upload to artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: Linux builds
-          path: dist/*.zip
-      - name: Upload to releases
-        if: github.event_name == 'release'
-        uses: svenstaro/upload-release-action@e74ff71f7d8a4c4745b560a485cc5fdb9b5b999d
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/*.zip
-          tag: ${{ github.ref }}
-          file_glob: true
-
   build_win_extract:
     name: Build on Windows
     runs-on: windows-2016
@@ -129,31 +87,9 @@ jobs:
           name: Windows builds
           path: dist/*.zip
       - name: Windows to releases
-        if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@e74ff71f7d8a4c4745b560a485cc5fdb9b5b999d
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*.zip
-          tag: ${{ github.ref }}
+          tag: V61
           file_glob: true
-
-  analyze_coverity:
-    env:
-      PROJECT_TYPE: TOOL
-      JOB_TYPE: COVERITY
-    if: github.repository_owner == 'LongSoft' && github.event_name != 'pull_request'
-    name: Analyze Coverity
-    runs-on: macos-10.15
-    steps:
-      - name: CI Bootstrap
-        run: |
-          src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) && eval "$src" || exit 1
-      - uses: actions/checkout@v2
-      - run: ./unixbuild.sh --configure
-      - name: Run Coverity
-        run: |
-          src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/coverity/covstrap.sh) && eval "$src" || exit 1
-        env:
-          COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-          COVERITY_SCAN_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
-          COVERITY_BUILD_COMMAND: ./unixbuild.sh --build
